@@ -23,13 +23,15 @@ model User {
   ratings       Float      @default(0)
   ratingCount   Int      @default(0)
   json          Json?    @default("{}")
-  // Relations to Review model
+  
   writtenReviews  Review[] @relation("WrittenReviews")
   receivedReviews Review[] @relation("ReceivedReviews")
 
-  // Friendships
   sentFriendRequests     Friendship[] @relation("SentFriendRequests")
   receivedFriendRequests Friendship[] @relation("ReceivedFriendRequests")
+
+  sentMessages     ChatMessage[] @relation("SentMessages")
+  receivedMessages ChatMessage[] @relation("ReceivedMessages")
 }
 
 model Friendship {
@@ -38,13 +40,13 @@ model Friendship {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  requester   User   @relation("SentFriendRequests", fields: [requesterId], references: [id])
+  requester   User   @relation("SentFriendRequests", fields: [requesterId], references: [id], onDelete: Cascade)
   requesterId String
 
-  receiver   User   @relation("ReceivedFriendRequests", fields: [receiverId], references: [id])
+  receiver   User   @relation("ReceivedFriendRequests", fields: [receiverId], references: [id], onDelete: Cascade)
   receiverId String
 
-  blockedBy  String? // ID of the user who blocked the other
+  blockedBy  String? 
 
   @@unique([requesterId, receiverId])
 }
@@ -57,7 +59,7 @@ enum FriendshipStatus {
 
 model Trip {
   id           String   @id @default(uuid())
-  user         User     @relation("UserTrips", fields: [userId], references: [id])
+  user         User     @relation("UserTrips", fields: [userId], references: [id], onDelete: Cascade)
   userId       String
   startTime    DateTime
   stationList  Int[]
@@ -68,7 +70,7 @@ model Trip {
 
 model TripHistory {
   id           String   @id @default(uuid())
-  user         User     @relation("UserTripHistory", fields: [userId], references: [id])
+  user         User     @relation("UserTripHistory", fields: [userId], references: [id], onDelete: Cascade)
   userId       String
   startTime    DateTime
   stationList  Int[]
@@ -84,12 +86,27 @@ model Review {
   comment   String?
   createdAt DateTime @default(now())
 
-  reviewer   User   @relation("WrittenReviews", fields: [reviewerId], references: [id])
+  reviewer   User   @relation("WrittenReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
   reviewerId String
 
-  reviewee   User   @relation("ReceivedReviews", fields: [revieweeId], references: [id])
+  reviewee   User   @relation("ReceivedReviews", fields: [revieweeId], references: [id], onDelete: Cascade)
   revieweeId String
 
   @@index([revieweeId]) 
   @@index([reviewerId])
+}
+
+model ChatMessage {
+  id              String   @id @default(uuid())
+  message         String
+  clientTimestamp BigInt?
+  createdAt       DateTime @default(now())
+  
+  sender          User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId        String
+
+  receiver        User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId      String
+
+  @@index([senderId, receiverId])
 }
